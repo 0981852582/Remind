@@ -5,7 +5,7 @@ const cron = require('node-cron');
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'truongquoctrong231194@gmail.com', // Email dùng để gửi (có thể là mail của bạn)
+        user: 'truongquoctrong231194@gmail.com1', // Email dùng để gửi (có thể là mail của bạn)
         pass: 'hinz pwdd qdur dxgc' // Mật khẩu ứng dụng (App Password) tạo từ Google Account
     }
 });
@@ -51,12 +51,6 @@ const sendDailyReminder = async () => {
         console.error('Lỗi khi gửi email:', err);
     }
 };
-
-// 3. Lập lịch chạy tự động lúc 08:00 sáng mỗi ngày (Giờ Việt Nam)[cite: 31]
-// Thay đổi từ '0 8 * * *' (8h sáng) thành '25 17 * * *' (17h25 chiều)
-// Đặt là 16:45 để nhận mail sau vài phút nữa
-// Đặt là 17:05 để nhận mail ngay sau vài phút nữa
-// Đặt là 18:15 để server kích hoạt ngay sau khi bạn push code xong
 cron.schedule('20 10 * * *', () => { 
     console.log('Bắt đầu gửi mail nhắc nhở định kỳ...');
     sendDailyReminder();

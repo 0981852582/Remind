@@ -51,7 +51,7 @@ const sendDailyReminder = async () => {
         console.error('Lỗi khi gửi email:', err);
     }
 };
-cron.schedule('35 18 * * *', () => { 
+cron.schedule('0 0 * * *', () => { 
     console.log('Bắt đầu gửi mail nhắc nhở định kỳ...');
     sendDailyReminder();
 }, {

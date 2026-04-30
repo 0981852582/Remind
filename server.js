@@ -57,7 +57,7 @@ const sendDailyReminder = async () => {
 // Đặt là 16:45 để nhận mail sau vài phút nữa
 // Đặt là 17:05 để nhận mail ngay sau vài phút nữa
 // Đặt là 18:15 để server kích hoạt ngay sau khi bạn push code xong
-cron.schedule('15 18 * * *', () => { 
+cron.schedule('20 10 * * *', () => { 
     console.log('Bắt đầu gửi mail nhắc nhở định kỳ...');
     sendDailyReminder();
 }, {

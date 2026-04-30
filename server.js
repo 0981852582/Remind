@@ -54,7 +54,7 @@ const sendDailyReminder = async () => {
 
 // 3. Lập lịch chạy tự động lúc 08:00 sáng mỗi ngày (Giờ Việt Nam)[cite: 31]
 // Thay đổi từ '0 8 * * *' (8h sáng) thành '25 17 * * *' (17h25 chiều)
-cron.schedule('25 17 * * *', () => {
+cron.schedule('30 16 * * *', () => {
     console.log('Bắt đầu gửi mail nhắc nhở định kỳ...');
     sendDailyReminder();
 }, {

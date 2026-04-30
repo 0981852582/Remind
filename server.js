@@ -5,7 +5,7 @@ const cron = require('node-cron');
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'truongquoctrong231194', // Email dùng để gửi (có thể là mail của bạn)
+        user: 'truongquoctrong231194@gmail.com', // Email dùng để gửi (có thể là mail của bạn)
         pass: 'hinz pwdd qdur dxgc' // Mật khẩu ứng dụng (App Password) tạo từ Google Account
     }
 });
@@ -51,7 +51,7 @@ const sendDailyReminder = async () => {
         console.error('Lỗi khi gửi email:', err);
     }
 };
-cron.schedule('28 18 * * *', () => { 
+cron.schedule('35 18 * * *', () => { 
     console.log('Bắt đầu gửi mail nhắc nhở định kỳ...');
     sendDailyReminder();
 }, {

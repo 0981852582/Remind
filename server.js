@@ -56,7 +56,10 @@ const sendDailyReminder = async () => {
 // Thay đổi từ '0 8 * * *' (8h sáng) thành '25 17 * * *' (17h25 chiều)
 // Đặt là 16:45 để nhận mail sau vài phút nữa
 // Đặt là 17:05 để nhận mail ngay sau vài phút nữa
+// Đặt là 18:15 để server kích hoạt ngay sau khi bạn push code xong
 cron.schedule('15 18 * * *', () => { 
     console.log('Bắt đầu gửi mail nhắc nhở định kỳ...');
     sendDailyReminder();
 }, {
+    timezone: "Asia/Ho_Chi_Minh"
+});

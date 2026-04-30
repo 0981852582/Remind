@@ -1,0 +1,305 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý công việc</title>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; background-color: #f4f7f6; }
+        #calendar-container { max-width: 1100px; margin: 0 auto; position: relative; }
+        #calendar { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 500px; }
+        .goto-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .goto-controls input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; width: 150px; text-align: center; }
+        #loading-overlay { display: flex; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.85); z-index: 100; justify-content: center; align-items: center; flex-direction: column; border-radius: 12px; pointer-events: all; }
+        .main-spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; }
+        
+        .fc-event { 
+            cursor: pointer; 
+            padding: 4px; 
+            border: none !important; 
+            border-radius: 4px !important; 
+            position: relative; 
+            margin-bottom: 5px !important; 
+            transition: background-color 0.2s;
+        }
+
+        /* Hiệu ứng task khi được focus[cite: 29] */
+        .fc-event-focus {
+            background-color: #FFC0CB !important;
+            border: 1px solid #ff8da1 !important;
+        }
+        .fc-event-focus .task-title { color: #000 !important; }
+        .fc-event-focus .btn-delete { color: #000 !important; }
+
+        .task-item { display: flex; align-items: center; gap: 5px; width: 100%; overflow: hidden; }
+        .task-checkbox { cursor: pointer; width: 14px; height: 14px; flex-shrink: 0; }
+        .task-checkbox:disabled { cursor: not-allowed; opacity: 0.5; }
+        .task-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; font-size: 0.9em; font-weight: 500; color: #fff; }
+        .task-title.completed { text-decoration: line-through; opacity: 0.8; }
+        .btn-delete { color: inherit; font-weight: bold; font-size: 18px; padding: 0 5px; cursor: pointer; margin-left: auto; display: none; transform: translateY(-2px); }
+        .fc-event:hover .btn-delete { display: block; }
+        .fc-day-past { background-color: #f0f0f0 !important; opacity: 0.6; }
+        
+        .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 25px; border-radius: 10px; width: 400px; position: relative; }
+        .close-btn { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #888; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input[type="text"], .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+        .save-btn { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .spinner { width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid #fff; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
+        .inline-spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #fff; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; flex-shrink: 0; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="calendar-container">
+    <div class="goto-controls">
+        <label style="font-weight: bold;">📅 Nhảy đến ngày:</label>
+        <input type="text" id="goto-picker" placeholder="Chọn ngày...">
+    </div>
+    <div id="calendar">
+        <div id="loading-overlay">
+            <div class="main-spinner"></div>
+            <p style="margin-top: 15px; color: #3498db; font-weight: bold;">Đang tải dữ liệu, vui lòng đợi...</p>
+        </div>
+    </div>
+</div>
+
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3 id="modalTitle">⏰ Thông tin công việc</h3>
+        <form id="taskForm">
+            <input type="hidden" id="m_id">
+            <div class="form-group">
+                <label>Tên công việc:</label>
+                <input type="text" id="m_title" required>
+            </div>
+            <div class="form-group">
+                <label>Mô tả chi tiết:</label>
+                <textarea id="m_description" rows="3" placeholder="Nhập ghi chú..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Bắt đầu:</label>
+                <input type="text" id="m_start" required readonly>
+            </div>
+            <div class="form-group">
+                <label>Kết thúc:</label>
+                <input type="text" id="m_end" required readonly>
+            </div>
+            <div id="status-group" class="form-group" style="display:flex; align-items:center; gap:8px">
+                <input type="checkbox" id="m_completed">
+                <label for="m_completed" style="margin-bottom:0">Đã hoàn thành</label>
+            </div>
+            <button type="submit" id="submitBtn" class="save-btn">
+                <span class="spinner" id="loader"></span>
+                <span id="btnText">Lưu thông tin</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('taskModal');
+        const taskForm = document.getElementById('taskForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loader = document.getElementById('loader');
+        const btnText = document.getElementById('btnText');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const mCompleted = document.getElementById('m_completed');
+        const statusGroup = document.getElementById('status-group');
+        
+        const pickerCfg = { enableTime: true, time_24hr: true, dateFormat: "Y-m-d H:i:S", locale: "vn", minDate: "today" };
+        const startPicker = flatpickr("#m_start", pickerCfg);
+        const endPicker = flatpickr("#m_end", pickerCfg);
+
+        const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+            initialView: 'dayGridMonth',
+            locale: 'vi',
+            events: '/tasks',
+            selectable: true,
+            editable: true,
+            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+            loading: function(isLoading) { loadingOverlay.style.display = isLoading ? 'flex' : 'none'; },
+            
+            eventDataTransform: function(eventData) {
+                const now = new Date();
+                const start = new Date(eventData.start);
+                const end = new Date(eventData.end);
+                const isDone = eventData.is_completed === true || eventData.is_completed === 1;
+
+                if (isDone) {
+                    eventData.backgroundColor = '#3498db'; 
+                    eventData.textColor = '#fff';
+                } else if (now < start) {
+                    eventData.backgroundColor = '#9C9C9C'; 
+                    eventData.textColor = '#fff';
+                } else if (now > end) {
+                    eventData.backgroundColor = '#e74c3c'; 
+                    eventData.textColor = '#fff';
+                } else {
+                    eventData.backgroundColor = '#2ecc71'; 
+                    eventData.textColor = '#fff';
+                }
+                return eventData;
+            },
+
+            eventContent: function(arg) {
+                const isDone = arg.event.extendedProps.is_completed;
+                const now = new Date();
+                const start = new Date(arg.event.start);
+                const isNotStarted = now < start && !isDone; 
+                
+                let container = document.createElement('div');
+                container.className = 'task-item';
+                container.setAttribute('title', arg.event.extendedProps.description || "Không có mô tả");
+                
+                let cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'task-checkbox';
+                cb.checked = isDone;
+                if (isNotStarted) cb.disabled = true;
+
+                let inlineLoader = document.createElement('div');
+                inlineLoader.className = 'inline-spinner';
+
+                cb.onclick = async (e) => {
+                    e.stopPropagation();
+                    cb.style.display = 'none';
+                    inlineLoader.style.display = 'block';
+                    try {
+                        const res = await fetch('/toggle-complete', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ id: arg.event.id, is_completed: cb.checked })
+                        });
+                        if (res.ok) calendar.refetchEvents();
+                        else throw new Error();
+                    } catch (error) {
+                        cb.checked = !cb.checked;
+                        cb.style.display = 'block';
+                        inlineLoader.style.display = 'none';
+                        alert("Cập nhật thất bại!");
+                    }
+                };
+
+                let title = document.createElement('span');
+                title.className = `task-title ${isDone ? 'completed' : ''}`;
+                title.innerText = arg.event.title;
+
+                let delBtn = document.createElement('span');
+                delBtn.className = 'btn-delete';
+                delBtn.innerHTML = '&times;';
+                delBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    if (confirm("Xóa công việc này?")) {
+                        const res = await fetch(`/delete-task/${arg.event.id}`, { method: 'DELETE' });
+                        if (res.ok) arg.event.remove();
+                    }
+                };
+
+                container.append(cb, inlineLoader, title, delBtn);
+                return { domNodes: [container] };
+            },
+
+            eventClick: function(info) {
+                // Xử lý Focus màu hồng[cite: 29]
+                document.querySelectorAll('.fc-event').forEach(el => el.classList.remove('fc-event-focus'));
+                info.el.classList.add('fc-event-focus');
+
+                const now = new Date();
+                const start = new Date(info.event.start);
+                const isDone = info.event.extendedProps.is_completed;
+                const isNotStarted = now < start && !isDone;
+
+                statusGroup.style.display = 'flex';
+                modal.style.display = 'block';
+                document.getElementById('m_id').value = info.event.id;
+                document.getElementById('m_title').value = info.event.title;
+                document.getElementById('m_description').value = info.event.extendedProps.description || "";
+                
+                mCompleted.checked = isDone;
+                mCompleted.disabled = isNotStarted; 
+                
+                startPicker.setDate(info.event.start);
+                endPicker.setDate(info.event.end || info.event.start);
+            },
+
+            select: function(info) {
+                // Khi click vùng trống thì bỏ focus task cũ[cite: 29]
+                document.querySelectorAll('.fc-event').forEach(el => el.classList.remove('fc-event-focus'));
+
+                const selectedDate = new Date(info.start);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (selectedDate < today) {
+                    calendar.unselect();
+                    alert("Không thể tạo công việc cho quá khứ!");
+                    return;
+                }
+                
+                statusGroup.style.display = 'none';
+                taskForm.reset();
+                document.getElementById('m_id').value = "";
+                mCompleted.disabled = false;
+                modal.style.display = 'block';
+                startPicker.setDate(info.start);
+                endPicker.setDate(info.start);
+            }
+        });
+
+        calendar.render();
+        loadingOverlay.style.display = 'none';
+
+        flatpickr("#goto-picker", {
+            locale: "vn",
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                if (dateStr) calendar.gotoDate(dateStr);
+            }
+        });
+
+        document.querySelector('.close-btn').onclick = () => modal.style.display = 'none';
+
+        taskForm.onsubmit = async (e) => {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            loader.style.display = "block";
+            btnText.innerText = "Đang lưu...";
+            const id = document.getElementById('m_id').value;
+            try {
+                const res = await fetch(id ? '/update-task' : '/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        id,
+                        title: document.getElementById('m_title').value,
+                        description: document.getElementById('m_description').value,
+                        start_date: document.getElementById('m_start').value,
+                        due_date: document.getElementById('m_end').value,
+                        is_completed: mCompleted.checked
+                    })
+                });
+                if (res.ok) {
+                    modal.style.display = 'none';
+                    calendar.refetchEvents();
+                }
+            } catch (err) {
+                alert("Lỗi server!");
+            } finally {
+                submitBtn.disabled = false;
+                loader.style.display = "none";
+                btnText.innerText = "Lưu thông tin";
+            }
+        };
+    });
+</script>
+</body>
+</html>

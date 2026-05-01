@@ -39,7 +39,7 @@ const sendDailyReminder = async () => {
             else if (now >= start) processing.push(task.title);
         });
 
-        // Chỉ gửi mail nếu có task cần nhắc[cite: 6]
+        // Chỉ gửi mail nếu có task cần nhắc
         if (overdue.length === 0 && processing.length === 0) {
             console.log('Không có task nào quá hạn hoặc đang xử lý. Kết thúc.');
             return;
@@ -63,9 +63,13 @@ const sendDailyReminder = async () => {
     }
 };
 
-// 4. Lập lịch chạy (Đã sửa lỗi cú pháp ngoặc và đặt 17:30 để test)
-cron.schedule('36 16 * * *', async () => { 
-    console.log('--- [17:30] Bắt đầu kích hoạt tiến trình gửi mail ---');
+// === LỆNH TEST: CHẠY NGAY LẬP TỨC KHI SERVER KHỞI ĐỘNG ===
+console.log('Khởi động server: Chạy thử hàm gửi mail ngay lập tức...');
+sendDailyReminder();
+
+// 4. Lập lịch chạy định kỳ (Đặt hờ 16:50 để dự phòng)
+cron.schedule('50 16 * * *', async () => { 
+    console.log('--- Bắt đầu kích hoạt tiến trình gửi mail theo giờ ---');
     await sendDailyReminder();
 }, {
     timezone: "Asia/Ho_Chi_Minh"

@@ -64,7 +64,7 @@ const sendDailyReminder = async () => {
 };
 
 // 4. Lập lịch chạy (Đã sửa lỗi cú pháp ngoặc và đặt 17:30 để test)
-cron.schedule('25 17 * * *', async () => { 
+cron.schedule('28 16 * * *', async () => { 
     console.log('--- [17:30] Bắt đầu kích hoạt tiến trình gửi mail ---');
     await sendDailyReminder();
 }, {

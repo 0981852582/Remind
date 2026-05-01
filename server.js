@@ -61,7 +61,7 @@ const sendDailyReminder = async () => {
 };
 
 // 4. Lập lịch chạy (Giữ nguyên 00:00 theo ý bạn)[cite: 7]
-cron.schedule('13 16 * * *', () => { 
+cron.schedule('18 17 * * *', () => { 
     console.log('Bắt đầu gửi mail nhắc nhở định kỳ...');
     sendDailyReminder();
 }, {

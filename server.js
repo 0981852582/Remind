@@ -10,14 +10,17 @@ const pool = new Pool({
     }
 });
 
-// 2. Cấu hình gửi mail (Đã cập nhật để chống lỗi ETIMEDOUT)
+// 2. Cấu hình gửi mail (Xuyên tường firewall Railway)
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Bắt buộc kết nối an toàn SSL
+    port: 587, // Đổi sang cổng 587
+    secure: false, // Phải để false với cổng 587 (sẽ tự động nâng cấp mã hóa sau)
     auth: {
         user: 'truongquoctrong231194@gmail.com',
         pass: 'hinz pwdd qdur dxgc' 
+    },
+    tls: {
+        rejectUnauthorized: false // Bỏ qua kẹt chứng chỉ SSL nội bộ trên server
     }
 });
 
@@ -70,7 +73,7 @@ console.log('Khởi động server: Chạy thử hàm gửi mail ngay lập tứ
 sendDailyReminder();
 
 // 4. Lập lịch chạy định kỳ
-cron.schedule('25 17 * * *', async () => { 
+cron.schedule('30 17 * * *', async () => { 
     console.log('--- [00:00] Bắt đầu kích hoạt tiến trình gửi mail theo giờ ---');
     await sendDailyReminder();
 }, {

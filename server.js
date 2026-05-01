@@ -1,10 +1,9 @@
 ﻿const { Pool } = require('pg'); 
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend'); // Thư viện mới
 const cron = require('node-cron');
-const dns = require('dns'); // Thêm thư viện quản lý phân giải tên miền
 
-// === LIỀU THUỐC ĐẶC TRỊ LỖI TIMEOUT TRÊN RAILWAY ===
-dns.setDefaultResultOrder('ipv4first'); // Ép Node.js ưu tiên dùng IPv4 để tránh kẹt mạng IPv6
+// Khởi tạo Resend bằng API Key lấy từ biến môi trường
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // 1. Cấu hình kết nối Database
 const pool = new Pool({
@@ -14,21 +13,7 @@ const pool = new Pool({
     }
 });
 
-// 2. Cấu hình gửi mail (Xuyên tường firewall Railway)
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587, // Đổi sang cổng 587
-    secure: false, // Phải để false với cổng 587 (sẽ tự động nâng cấp mã hóa sau)
-    auth: {
-        user: 'truongquoctrong231194@gmail.com',
-        pass: 'hinz pwdd qdur dxgc' 
-    },
-    tls: {
-        rejectUnauthorized: false // Bỏ qua kẹt chứng chỉ SSL nội bộ trên server
-    }
-});
-
-// 3. Hàm xử lý logic nhắc nhở
+// 2. Hàm xử lý logic nhắc nhở bằng Resend API
 const sendDailyReminder = async () => {
     try {
         const now = new Date();
@@ -48,15 +33,15 @@ const sendDailyReminder = async () => {
             else if (now >= start) processing.push(task.title);
         });
 
-        // Chỉ gửi mail nếu có task cần nhắc
         if (overdue.length === 0 && processing.length === 0) {
             console.log('Không có task nào quá hạn hoặc đang xử lý. Kết thúc.');
             return;
         }
 
-        await transporter.sendMail({
-            from: '"Hệ thống Quản lý Công việc" <truongquoctrong231194@gmail.com>',
-            to: 'truongquoctrong231194@gmail.com',
+        // Gọi Resend qua HTTPS, vượt qua mọi rào cản firewall
+        const { data, error } = await resend.emails.send({
+            from: 'Hệ Thống Remind <onboarding@resend.dev>', // Bắt buộc dùng mail này để test
+            to: 'truongquoctrong231194@gmail.com', // Mail bạn đăng ký với Resend
             subject: `🔔 Nhắc nhở công việc ngày ${now.toLocaleDateString('vi-VN')}`,
             html: `
                 <h3>Danh sách công việc cần xử lý:</h3>
@@ -66,19 +51,25 @@ const sendDailyReminder = async () => {
                 <p><i>Hệ thống tự động gửi định kỳ.</i></p>
             `
         });
-        console.log('Đã gửi email nhắc nhở thành công!');
+
+        if (error) {
+            console.error('Lỗi Resend trả về:', error);
+        } else {
+            console.log('Đã gửi email nhắc nhở thành công! ID:', data.id);
+        }
+        
     } catch (err) {
-        console.error('Lỗi khi gửi email:', err);
+        console.error('Lỗi trong quá trình chạy hàm:', err);
     }
 };
 
-// === LỆNH TEST: CHẠY NGAY LẬP TỨC KHI SERVER KHỞI ĐỘNG ===
-console.log('Khởi động server: Chạy thử hàm gửi mail ngay lập tức...');
+// === LỆNH TEST NGAY LẬP TỨC ===
+console.log('Khởi động server: Chạy thử hàm gửi mail bằng Resend API...');
 sendDailyReminder();
 
-// 4. Lập lịch chạy định kỳ
-cron.schedule('33 17 * * *', async () => { 
-    console.log('--- [17:30] Bắt đầu kích hoạt tiến trình gửi mail theo giờ ---');
+// 3. Lập lịch chạy định kỳ (Trở về lúc nửa đêm)
+cron.schedule('00 00 * * *', async () => { 
+    console.log('--- [00:00] Bắt đầu kích hoạt tiến trình gửi mail theo giờ ---');
     await sendDailyReminder();
 }, {
     timezone: "Asia/Ho_Chi_Minh"

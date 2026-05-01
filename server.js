@@ -70,7 +70,7 @@ console.log('Khởi động server: Chạy thử hàm gửi mail ngay lập tứ
 sendDailyReminder();
 
 // 4. Lập lịch chạy định kỳ
-cron.schedule('20 17 * * *', async () => { 
+cron.schedule('25 17 * * *', async () => { 
     console.log('--- [00:00] Bắt đầu kích hoạt tiến trình gửi mail theo giờ ---');
     await sendDailyReminder();
 }, {

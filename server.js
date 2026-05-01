@@ -1,6 +1,10 @@
 ﻿const { Pool } = require('pg'); 
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
+const dns = require('dns'); // Thêm thư viện quản lý phân giải tên miền
+
+// === LIỀU THUỐC ĐẶC TRỊ LỖI TIMEOUT TRÊN RAILWAY ===
+dns.setDefaultResultOrder('ipv4first'); // Ép Node.js ưu tiên dùng IPv4 để tránh kẹt mạng IPv6
 
 // 1. Cấu hình kết nối Database
 const pool = new Pool({
@@ -73,8 +77,8 @@ console.log('Khởi động server: Chạy thử hàm gửi mail ngay lập tứ
 sendDailyReminder();
 
 // 4. Lập lịch chạy định kỳ
-cron.schedule('30 17 * * *', async () => { 
-    console.log('--- [00:00] Bắt đầu kích hoạt tiến trình gửi mail theo giờ ---');
+cron.schedule('33 17 * * *', async () => { 
+    console.log('--- [17:30] Bắt đầu kích hoạt tiến trình gửi mail theo giờ ---');
     await sendDailyReminder();
 }, {
     timezone: "Asia/Ho_Chi_Minh"

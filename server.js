@@ -68,7 +68,7 @@ console.log('Khởi động server: Chạy thử hàm gửi mail bằng Resend A
 sendDailyReminder();
 
 // 3. Lập lịch chạy định kỳ (Trở về lúc nửa đêm)
-cron.schedule('00 00 * * *', async () => { 
+cron.schedule('00 03 * * *', async () => { 
     console.log('--- [00:00] Bắt đầu kích hoạt tiến trình gửi mail theo giờ ---');
     await sendDailyReminder();
 }, {

@@ -56,7 +56,7 @@ const sendDailyReminder = async () => {
                 <p style="color: #2ecc71;"><b>⏳ Đang xử lý:</b> ${processing.length ? processing.join(', ') : 'Không có'}</p>
                 <br>
                 <p><i>Hệ thống tự động gửi định kỳ. </i></p>
-            <p><i>Link:https://shop-beta-nine-70.vercel.app/</i></p>`
+                <p><i>Link:https://shop-beta-nine-70.vercel.app/</i></p>`
         });
 
         if (error) {

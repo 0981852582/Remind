@@ -45,6 +45,15 @@ const sendDailyReminder = async () => {
         // Ép format ngày ở tiêu đề email theo múi giờ Việt Nam
         const todayStr = new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 
+        // Hàm tạo danh sách đánh số thứ tự (1. 2. 3.) cho email
+        const formatList = (tasks) => {
+            if (tasks.length === 0) return 'Không có';
+            // Tạo thẻ <ol> (ordered list) để tự động đánh số
+            return '<ol style="margin-top: 5px; margin-bottom: 10px; padding-left: 20px;">' + 
+                   tasks.map(t => `<li>${t.replace(/\n/g, '<br>')}</li>`).join('') + 
+                   '</ol>';
+        };
+
         // Gọi Resend qua HTTPS, vượt qua mọi rào cản firewall
         const { data, error } = await resend.emails.send({
             from: 'Hệ Thống Remind <onboarding@resend.dev>', // Bắt buộc dùng mail này để test
@@ -52,11 +61,18 @@ const sendDailyReminder = async () => {
             subject: `🔔 Nhắc nhở công việc ngày ${todayStr}`,
             html: `
                 <h3>Danh sách công việc cần xử lý:</h3>
-                <p style="color: #e74c3c;"><b>⚠️ Quá hạn:</b> ${overdue.length ? overdue.join(', ') : 'Không có'}</p>
-                <p style="color: #2ecc71;"><b>⏳ Đang xử lý:</b> ${processing.length ? processing.join(', ') : 'Không có'}</p>
+                <div style="color: #e74c3c;">
+                    <b>⚠️ Quá hạn:</b> 
+                    ${formatList(overdue)}
+                </div>
+                <div style="color: #2ecc71;">
+                    <b>⏳ Đang xử lý:</b> 
+                    ${formatList(processing)}
+                </div>
                 <br>
                 <p><i>Hệ thống tự động gửi định kỳ.</i></p>
-            <p>Link:https://shop-beta-nine-70.vercel.app/</i></p>`
+                <p>Link: <a href="https://shop-beta-nine-70.vercel.app/" target="_blank">https://shop-beta-nine-70.vercel.app/</a></p>
+            `
         });
 
         if (error) {

@@ -1,5 +1,5 @@
 ﻿const { Pool } = require('pg'); 
-const { Resend } = require('resend'); // Thư viện mới
+const { Resend } = require('resend'); 
 const cron = require('node-cron');
 
 // Khởi tạo Resend bằng API Key lấy từ biến môi trường
@@ -16,7 +16,11 @@ const pool = new Pool({
 // 2. Hàm xử lý logic nhắc nhở bằng Resend API
 const sendDailyReminder = async () => {
     try {
-        const now = new Date();
+        // --- SỬA LỖI MÚI GIỜ (UTC -> VN) TẠI ĐÂY ---
+        // Lấy thời gian hiện tại ép chuẩn theo múi giờ Việt Nam
+        const vnTimeStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const now = new Date(vnTimeStr); 
+
         const result = await pool.query(`
             SELECT title, due_date, start_date 
             FROM tasks 
@@ -38,11 +42,14 @@ const sendDailyReminder = async () => {
             return;
         }
 
+        // Ép format ngày ở tiêu đề email theo múi giờ Việt Nam
+        const todayStr = new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
         // Gọi Resend qua HTTPS, vượt qua mọi rào cản firewall
         const { data, error } = await resend.emails.send({
             from: 'Hệ Thống Remind <onboarding@resend.dev>', // Bắt buộc dùng mail này để test
             to: 'truongquoctrong231194@gmail.com', // Mail bạn đăng ký với Resend
-            subject: `🔔 Nhắc nhở công việc ngày ${now.toLocaleDateString('vi-VN')}`,
+            subject: `🔔 Nhắc nhở công việc ngày ${todayStr}`,
             html: `
                 <h3>Danh sách công việc cần xử lý:</h3>
                 <p style="color: #e74c3c;"><b>⚠️ Quá hạn:</b> ${overdue.length ? overdue.join(', ') : 'Không có'}</p>
@@ -67,9 +74,9 @@ const sendDailyReminder = async () => {
 console.log('Khởi động server: Chạy thử hàm gửi mail bằng Resend API...');
 sendDailyReminder();
 
-// 3. Lập lịch chạy định kỳ (Trở về lúc nửa đêm)
+// 3. Lập lịch chạy định kỳ vào 03:00 sáng mỗi ngày
 cron.schedule('00 03 * * *', async () => { 
-    console.log('--- [00:00] Bắt đầu kích hoạt tiến trình gửi mail theo giờ ---');
+    console.log('--- [03:00] Bắt đầu kích hoạt tiến trình gửi mail theo giờ ---');
     await sendDailyReminder();
 }, {
     timezone: "Asia/Ho_Chi_Minh"

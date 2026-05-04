@@ -55,7 +55,7 @@ const sendDailyReminder = async () => {
                 <p style="color: #e74c3c;"><b>⚠️ Quá hạn:</b> ${overdue.length ? overdue.join(', ') : 'Không có'}</p>
                 <p style="color: #2ecc71;"><b>⏳ Đang xử lý:</b> ${processing.length ? processing.join(', ') : 'Không có'}</p>
                 <br>
-                <p><i>Hệ thống tự động gửi định kỳ. Link:https://shop-beta-nine-70.vercel.app/</i></p>
+                <p><i>Hệ thống tự động gửi định kỳ.</i></p>
             <p>Link:https://shop-beta-nine-70.vercel.app/</i></p>`
         });
 
